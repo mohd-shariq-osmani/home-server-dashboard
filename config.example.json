@@ -1,0 +1,135 @@
+{
+  "server": {
+    "name": "mini-server",
+    "port": 3001,
+    "host": "0.0.0.0",
+    "refreshIntervalMs": 5000
+  },
+  "auth": {
+    "enabled": true,
+    "type": "pin",
+    "pin": "1234",
+    "sessionDurationDays": 365,
+    "sessionSecret": "replace-with-a-random-secret-string",
+    "apiToken": "replace-with-a-secure-api-token"
+  },
+  "storage": {
+    "bootMount": "/",
+    "externalDrives": [
+      {
+        "id": "external-hdd",
+        "name": "external hdd",
+        "mount": "/Volumes/ExternalDrive"
+      }
+    ]
+  },
+  "services": [
+    {
+      "id": "lmstudio",
+      "name": "LM Studio",
+      "url": "http://127.0.0.1:1234",
+      "port": 1234
+    },
+    {
+      "id": "n8n",
+      "name": "n8n",
+      "url": "http://127.0.0.1:5678",
+      "publicUrl": "",
+      "port": 5678
+    },
+    {
+      "id": "comfyui",
+      "name": "ComfyUI",
+      "url": "http://127.0.0.1:8188",
+      "port": 8188
+    },
+    {
+      "id": "qbittorrent",
+      "name": "qBittorrent",
+      "url": "http://127.0.0.1:8080",
+      "port": 8080
+    },
+    {
+      "id": "adguard",
+      "name": "AdGuard Home",
+      "url": "http://127.0.0.1:81",
+      "port": 81
+    },
+    {
+      "id": "immich",
+      "name": "Immich",
+      "url": "http://127.0.0.1:2283",
+      "port": 2283
+    },
+    {
+      "id": "jellyfin",
+      "name": "Jellyfin",
+      "url": "http://127.0.0.1:8096",
+      "port": 8096
+    }
+  ],
+  "jellyfin": {
+    "enabled": true,
+    "url": "http://127.0.0.1:8096",
+    "port": 8096,
+    "apiKey": ""
+  },
+  "immich": {
+    "enabled": true,
+    "url": "http://127.0.0.1:2283",
+    "port": 2283,
+    "storagePath": "/Volumes/ExternalDrive/immich-server"
+  },
+  "adguard": {
+    "enabled": true,
+    "webPort": 81,
+    "dnsPort": 53,
+    "logPath": "/var/log/AdGuardHome.stderr.log",
+    "username": "admin",
+    "password": ""
+  },
+  "qbittorrent": {
+    "enabled": true,
+    "url": "http://127.0.0.1:8080",
+    "port": 8080,
+    "apiKey": ""
+  },
+  "arrSuite": {
+    "id": "arrsuite",
+    "name": "Arr suite",
+    "services": [
+      {
+        "id": "sonarr",
+        "name": "Sonarr",
+        "url": "http://127.0.0.1:8989",
+        "port": 8989
+      },
+      {
+        "id": "radarr",
+        "name": "Radarr",
+        "url": "http://127.0.0.1:7878",
+        "port": 7878
+      },
+      {
+        "id": "prowlarr",
+        "name": "Prowlarr",
+        "url": "http://127.0.0.1:9696",
+        "port": 9696
+      },
+      {
+        "id": "bazarr",
+        "name": "Bazarr",
+        "url": "http://127.0.0.1:6767",
+        "port": 6767
+      }
+    ]
+  },
+  "docker": {
+    "enabled": true,
+    "socketPath": "/var/run/docker.sock"
+  },
+  "ngrok": {
+    "enabled": true,
+    "apiUrl": "http://127.0.0.1:4040/api/tunnels"
+  }
+}

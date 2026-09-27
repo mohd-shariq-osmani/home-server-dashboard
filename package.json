@@ -1,0 +1,25 @@
+{
+  "name": "homeserver-monitor",
+  "version": "1.0.0",
+  "description": "Self-hosted dark-themed Mac Mini AI + media server monitoring dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "dashboard",
+    "monitoring",
+    "server",
+    "macmini",
+    "systeminformation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "http-proxy-middleware": "^4.2.0",
+    "systeminformation": "^5.25.11"
+  }
+}

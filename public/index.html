@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#08090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>mini-server · Monitor</title>
+  
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- PIN Lock Screen Overlay -->
+  <div class="pin-overlay" id="pinOverlay" style="display: none;">
+    <div class="pin-card" id="pinCard">
+      <div class="pin-icon-wrap">
+        <i class="ti ti-shield-lock"></i>
+      </div>
+      <h2 class="pin-title">HomeServer</h2>
+      <p class="pin-subtitle">Enter 4-digit PIN to unlock</p>
+      
+      <div class="pin-dots" id="pinDots">
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+        <span class="pin-dot"></span>
+      </div>
+      
+      <div class="pin-error-msg" id="pinErrorMsg"></div>
+
+      <!-- Hidden input for hardware/mobile keyboard support -->
+      <input type="password" id="pinHiddenInput" pattern="[0-9]*" inputmode="numeric" maxlength="4" autocomplete="off" style="position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px;">
+
+      <!-- Numeric Keypad -->
+      <div class="pin-keypad">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button class="key-btn action-key" id="pinClearBtn" title="Clear"><i class="ti ti-backspace"></i></button>
+        <button class="key-btn" data-key="0">0</button>
+        <button class="key-btn action-key" id="pinSubmitBtn" title="Unlock"><i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container" id="appContainer">
+    <!-- Clean Native Top Navigation Bar -->
+    <header class="app-top-nav">
+      <div class="nav-left">
+        <div class="server-brand">
+          <div class="server-brand-title">
+            <span class="status-dot pulse" id="serverStatusDot"></span>
+            <span class="server-name-text" id="serverName">mini-server</span>
+          </div>
+          <span class="uptime-badge" id="serverUptimeText">uptime ...</span>
+        </div>
+      </div>
+      <div class="nav-right">
+        <button class="network-badge-btn" id="networkBadgeBtn" title="Network Routing Mode (Click to switch)">
+          <i class="ti ti-network" id="networkBadgeIcon"></i>
+          <span id="networkBadgeText">Auto</span>
+        </button>
+        <a class="tunnel-badge" id="tunnelPill" href="#" target="_blank" title="Remote ngrok tunnel">
+          <i class="ti ti-world"></i>
+          <span id="tunnelAddress">tunnel</span>
+        </a>
+        <button class="refresh-btn" id="refreshIndicator" title="Click to refresh telemetry">
+          <i class="ti ti-refresh" id="refreshIcon"></i>
+          <span id="refreshTimer">5s</span>
+        </button>
+        <button class="power-btn" id="powerBtn" title="Power Controls (Restart / Shut Down)">
+          <i class="ti ti-power"></i>
+        </button>
+        <button class="lock-btn" id="lockBtn" title="Lock session">
+          <i class="ti ti-lock"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Area -->
+    <div class="dashboard-content">
+
+      <!-- Category Filter Tabs -->
+      <div class="category-tabs" id="categoryTabs">
+        <button class="cat-tab active" data-filter="all"><i class="ti ti-layout-grid"></i> All</button>
+        <button class="cat-tab" data-filter="hardware"><i class="ti ti-cpu"></i> Hardware</button>
+        <button class="cat-tab" data-filter="ai"><i class="ti ti-brain"></i> AI</button>
+        <button class="cat-tab" data-filter="media"><i class="ti ti-photo-video"></i> Media</button>
+        <button class="cat-tab" data-filter="network"><i class="ti ti-shield-network"></i> Network</button>
+      </div>
+
+      <!-- Metrics Section (CPU, RAM, Internal SSD, External HDD) -->
+      <div class="section-group" id="secHardware">
+        <div class="section-title">
+          <span>hardware telemetry</span>
+          <span class="section-badge">real-time</span>
+        </div>
+        <div class="metrics-grid" id="metricsGrid">
+          <!-- CPU Card with Sparkline -->
+          <div class="metric-card" id="cardCpu" title="Click to view top CPU consuming processes">
+            <div class="metric-card-header">
+              <div class="metric-title-group">
+                <i class="ti ti-cpu" aria-hidden="true"></i>
+                <span>cpu</span>
+              </div>
+              <div class="metric-extra-info" id="cpuCoreCount"><span class="interactive-pill">top cpu ↗</span></div>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-value" id="cpuVal">--%</span>
+              <span class="metric-subtext" id="cpuSub">8 cores</span>
+            </div>
+            <!-- Sparkline Graph -->
+            <div class="sparkline-container" id="cpuSparklineContainer">
+              <svg class="sparkline-svg" id="cpuSparkline" viewBox="0 0 200 30" preserveAspectRatio="none">
+                <path id="cpuSparklineArea" fill="rgba(76, 139, 245, 0.12)" d=""></path>
+                <path id="cpuSparklinePath" fill="none" stroke="var(--accent-blue)" stroke-width="1.8" d=""></path>
+              </svg>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill fill-normal" id="cpuBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- RAM Card with Sparkline & Top 10 Trigger -->
+          <div class="metric-card" id="cardRam" title="Click to view top 10 memory consuming processes">
+            <div class="metric-card-header">
+              <div class="metric-title-group">
+                <i class="ti ti-chart-bar" aria-hidden="true"></i>
+                <span>ram</span>
+              </div>
+              <div class="metric-extra-info" id="ramExtra"><span class="interactive-pill">top 10 ↗</span></div>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-value" id="ramVal">--%</span>
+              <span class="metric-subtext" id="ramSub">-- / -- GB</span>
+            </div>
+            <!-- Sparkline Graph -->
+            <div class="sparkline-container" id="ramSparklineContainer">
+              <svg class="sparkline-svg" id="ramSparkline" viewBox="0 0 200 30" preserveAspectRatio="none">
+                <path id="ramSparklineArea" fill="rgba(242, 184, 75, 0.12)" d=""></path>
+                <path id="ramSparklinePath" fill="none" stroke="var(--accent-amber)" stroke-width="1.8" d=""></path>
+              </svg>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill fill-normal" id="ramBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Internal SSD Card -->
+          <div class="metric-card" id="cardSsd" title="Click for storage details">
+            <div class="metric-card-header">
+              <div class="metric-title-group">
+                <i class="ti ti-device-desktop" aria-hidden="true"></i>
+                <span id="ssdLabel">internal ssd</span>
+              </div>
+              <div class="metric-extra-info" id="ssdExtra">-- GB</div>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-value" id="ssdVal">--%</span>
+              <span class="metric-subtext" id="ssdSub">-- / -- GB</span>
+            </div>
+            <div style="height: 10px;"></div>
+            <div class="progress-track">
+              <div class="progress-fill fill-normal" id="ssdBar" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- External HDD Card -->
+          <div class="metric-card" id="cardHdd" title="Click for external drive details">
+            <div class="metric-card-header">
+              <div class="metric-title-group">
+                <i class="ti ti-folder" aria-hidden="true"></i>
+                <span id="hddLabel">external hdd</span>
+              </div>
+              <div class="metric-extra-info" id="hddExtra">-- TB</div>
+            </div>
+            <div class="metric-value-row">
+              <span class="metric-value" id="hddVal">--%</span>
+              <span class="metric-subtext" id="hddSub">-- / -- TB</span>
+            </div>
+            <div style="height: 10px;"></div>
+            <div class="progress-track">
+              <div class="progress-fill fill-normal" id="hddBar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. AI Workloads (LM Studio, ComfyUI) -->
+      <div class="section-group" id="secAi">
+        <div class="section-title">
+          <span>ai workloads</span>
+          <span class="section-badge">apple silicon mps</span>
+        </div>
+        <div class="workloads-grid">
+          <!-- LM Studio Detailed Card -->
+          <div class="workload-card" id="cardLmStudio" title="Click to manage models and AI inference">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="lmStudioDot"></span>
+                <span class="workload-title">LM Studio</span>
+                <span class="chip chip-idle" id="lmStudioStatusChip">idle</span>
+              </div>
+              <div class="workload-action-group">
+                <div class="speed-badge" id="lmStudioSpeedBadge">-- tok/s</div>
+                <span class="interactive-pill pill-purple">manage ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div class="workload-model-name" id="lmStudioModelName">No model loaded</div>
+              <div class="workload-meta" id="lmStudioMeta">
+                <span class="meta-item"><i class="ti ti-cpu"></i> <span id="lmStudioArch">--</span></span>
+                <span class="meta-item"><i class="ti ti-adjustments"></i> <span id="lmStudioQuant">--</span></span>
+                <span class="meta-item"><i class="ti ti-database"></i> <span id="lmStudioSize">--</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ComfyUI Detailed Card -->
+          <div class="workload-card" id="cardComfyUi" title="Click to launch ComfyUI">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="comfyUiDot"></span>
+                <span class="workload-title">ComfyUI</span>
+                <span class="chip chip-idle" id="comfyUiStatusChip">0 active</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="interactive-pill pill-green" id="comfyUiLaunchPill">launch 8188 ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="comfyUiQueueText">0 running · 0 queued</span>
+                <span id="comfyUiProgressText">Apple MPS (GPU)</span>
+              </div>
+              <div class="progress-track" style="margin-top: 4px;">
+                <div class="progress-fill fill-normal" id="comfyUiProgressBar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- n8n AI & Automation Card -->
+          <div class="workload-card" id="cardN8n" title="Click to open n8n or view error history">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="n8nDot"></span>
+                <span class="workload-title"><i class="ti ti-topology-star-3" style="color:#ec4899;margin-right:4px;"></i>n8n</span>
+                <span class="chip chip-error" id="n8nStatusChip">3 failed</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="interactive-pill pill-purple" id="n8nLaunchPill" title="Open n8n Web UI">open n8n ↗</span>
+                <span class="interactive-pill pill-amber" id="n8nHistoryPill" title="View execution history">history ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="font-size: 12px; color: var(--text-primary); display: flex; justify-content: space-between;">
+                <span id="n8nSummaryText">0 running · 3 failed / error</span>
+                <span style="color: var(--text-muted); font-size: 11px;">latest: error</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 5px;" id="n8nLatestWorkflow">
+                Discord AI Multi-Agent Router
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Media & Downloads (Jellyfin, Immich, qBittorrent, Arr Suite) -->
+      <div class="section-group" id="secMedia">
+        <div class="section-title">
+          <span>media & downloads</span>
+          <span class="section-badge">personal cloud</span>
+        </div>
+        <div class="workloads-grid">
+          <!-- Jellyfin Media Server Card -->
+          <div class="workload-card" id="cardJellyfin" title="Click to view Jellyfin libraries, active streams, and scan options">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="jellyfinDot"></span>
+                <span class="workload-title"><i class="ti ti-device-tv" style="color:#a855f7;margin-right:4px;"></i>Jellyfin</span>
+                <span class="chip chip-idle" id="jellyfinStatusChip">v12.0.0</span>
+              </div>
+              <div class="workload-action-group">
+                <button class="interactive-pill pill-purple" id="jellyfinScanBtn" title="Scan all media libraries"><i class="ti ti-refresh"></i> <span class="pill-text-full">scan libraries</span><span class="pill-text-short">scan</span></button>
+                <span class="interactive-pill pill-blue" id="jellyfinLaunchPill"><span class="pill-text-full">open 8096 ↗</span><span class="pill-text-short">8096 ↗</span></span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="jellyfinSummaryText">69 movies · 54 series · 3,059 episodes</span>
+                <span id="jellyfinStreamStatus" style="color:var(--text-secondary);"><i class="ti ti-broadcast"></i> <span id="jellyfinStreamText">idle</span></span>
+              </div>
+              <div class="progress-track" style="margin-top: 4px;" id="jellyfinProgressTrack">
+                <div class="progress-fill fill-normal" id="jellyfinProgressBar" style="width: 0%; background: var(--accent-purple); transition: width 0.4s ease;"></div>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="jellyfinMetaText">
+                Shariqs-Mac-mini · Port 8096 · 14.6k items
+              </div>
+            </div>
+          </div>
+
+          <!-- Immich Photo & Video Server Card -->
+          <div class="workload-card" id="cardImmich" title="Click to view Immich photo server details & ML status">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="immichDot"></span>
+                <span class="workload-title"><i class="ti ti-photo" style="color:#818cf8;margin-right:4px;"></i>Immich</span>
+                <span class="chip chip-idle" id="immichStatusChip">v3.2.2</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="speed-badge" id="immichMlBadge">ML ready</span>
+                <span class="interactive-pill pill-purple" id="immichLaunchPill">open 2283 ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="immichSummaryText">Photos & Videos · Port 2283</span>
+                <span id="immichFeaturesText" style="color: var(--accent-green-text);"><i class="ti ti-sparkles"></i> smart search · faces</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="immichStorageText">
+                /Volumes/HDD 4TB/immich-server
+              </div>
+            </div>
+          </div>
+
+          <!-- qBittorrent Detailed Card -->
+          <div class="workload-card" id="cardQBittorrent" title="Click to view & manage torrent downloads">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="qbtDot"></span>
+                <span class="workload-title"><i class="ti ti-download" style="color:#38bdf8;margin-right:4px;"></i>qBittorrent</span>
+                <span class="chip chip-idle" id="qbtStatusChip">idle</span>
+              </div>
+              <div class="workload-action-group">
+                <div class="speed-badge" id="qbtSpeedBadge">↓ 0 B/s · ↑ 0 B/s</div>
+                <span class="interactive-pill pill-blue" id="qbtLaunchPill">manage ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="qbtSummaryText">0 downloading · 0 paused</span>
+                <span id="qbtProgressText">transfers idle</span>
+              </div>
+              <div class="progress-track" style="margin-top: 4px;">
+                <div class="progress-fill fill-normal" id="qbtProgressBar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arr Suite Media Automation Card -->
+          <div class="workload-card" id="cardArrSuite" title="Click to open Sonarr, Radarr, Prowlarr & Bazarr">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="arrDot"></span>
+                <span class="workload-title"><i class="ti ti-movie" style="color:#f59e0b;margin-right:4px;"></i>Arr Suite</span>
+                <span class="chip chip-idle" id="arrStatusChip">4/4 online</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="interactive-pill pill-amber" id="arrLaunchPill">manage ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span>Sonarr · Radarr · Prowlarr · Bazarr</span>
+                <span id="arrOnlineText" style="color:var(--text-secondary);">4 of 4 up</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 5px;">
+                Ports 8989 · 7878 · 9696 · 6767
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Network & Infrastructure Section -->
+      <div class="section-group" id="secNetwork">
+        <div class="section-title">
+          <span>network & infrastructure</span>
+          <span class="section-badge" id="adguardSectionBadge">dns protected</span>
+        </div>
+
+        <div class="workloads-grid">
+          <!-- Featured AdGuard Home Adblocker Card -->
+          <div class="workload-card adguard-card" id="cardAdGuard" title="Click to view AdGuard Home details and DNS setup">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="adguardDot"></span>
+                <span class="workload-title"><i class="ti ti-shield-check" style="color:#67B279;margin-right:4px;"></i>AdGuard Home</span>
+                <span class="chip chip-green" id="adguardStatusChip">protected</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="speed-badge" id="adguardRulesBadge">180k rules</span>
+                <span class="interactive-pill pill-green" id="adguardLaunchPill">open 81 ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="adguardUpstreamText">Quad9 (DoH) · Port 53</span>
+                <span id="adguardBlockingStatus" style="color: var(--accent-green-text);"><i class="ti ti-check"></i> blocking active</span>
+              </div>
+              <div class="adguard-meta-bar" style="display:flex;gap:12px;margin-top:6px;font-size:10.5px;color:var(--text-muted);font-family:var(--font-mono);">
+                <span>DNS: <strong id="adguardDnsLatency" style="color:var(--text-primary);">--ms</strong></span>
+                <span>Web: <strong id="adguardWebLatency" style="color:var(--text-primary);">--ms</strong></span>
+                <span>Version: <span id="adguardVersion">--</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Docker Container Engine Card -->
+          <div class="workload-card" id="cardDocker" title="Click to view and inspect Docker containers">
+            <div class="workload-header">
+              <div class="workload-title-group">
+                <span class="service-dot online" id="dockerDot"></span>
+                <span class="workload-title"><i class="ti ti-brand-docker" style="color:#38bdf8;margin-right:4px;"></i>Docker Engine</span>
+                <span class="chip chip-idle" id="dockerStatusChip">9 running</span>
+              </div>
+              <div class="workload-action-group">
+                <span class="interactive-pill pill-blue" id="dockerInspectPill">inspect ↗</span>
+              </div>
+            </div>
+            <div class="workload-body">
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary);">
+                <span id="dockerSubtitleText">9 containers healthy</span>
+                <span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 10.5px;">/var/run/docker.sock</span>
+              </div>
+              <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="dockerContainersPreview">
+                immich, n8n, valkey, postgres
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal / Drilldown Drawer -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">
+          <i class="ti ti-info-circle"></i>
+          <span>Details</span>
+        </div>
+        <button class="modal-close" id="modalClose" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>

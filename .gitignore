@@ -1,0 +1,36 @@
+# Secrets & Configuration
+config.json
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Logs & Temporary files
+*.log
+*.err
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Artifacts
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Generated Media & Screen recordings
+brag-output/
+scratch/
+test-results/
+
+# Editor & IDE directories
+.idea/
+.vscode/
+*.swp
+*.swo
